@@ -1,6 +1,6 @@
-##Escape the Maze
+# Escape the Maze
 
-Try it out: [INSERT-LINK]
+Try it out: https://yogsther.github.io/maze-escape/
 
 Draw a maze for the bot (the white pixel).
 The end of the maze is the green pixel.
