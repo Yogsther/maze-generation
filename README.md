@@ -1,12 +1,8 @@
-# Escape the Maze
+# Escape the Maze (Game)
 
 Try it out: https://yogsther.github.io/maze-escape/
 
-Draw a maze for the bot (the white pixel).
-The end of the maze is the green pixel.
-Draw with left click, and remove with right click.
-Currently you can't save or load maps.
-Clear the map by reloading the page.
+Generates a random Maze, your job is to reach the green pixel
+using your arrow keys.
 
-Known bugs:
-* Sometimes the bot gets stuck.
+Note: It's broken.

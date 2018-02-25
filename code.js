@@ -1,15 +1,15 @@
-
 /**
- * First attemt at making a maze-ecaping bot. 
- * v.0.4 - Known bugs: Sometimes the bot will get stuck, I'm working on this.
+ * Maze generator & game!
+ * Olle 25.2.18
  */
 
- /* Height and Width in blocks (not pixels.) 10x10 */
+/* Height and Width in blocks (not pixels.) blockSize x blockSize */
 
-var width = 50;
-var height = 30;
+var width = 30;
+var height = 20;
+var blockSize = 30;
 
-const canvas = document.getElementById("canvas"); 
+const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
 /**
@@ -19,273 +19,305 @@ const ctx = canvas.getContext("2d");
  * 2 = down,
  * 3 = right
  */
-var bot = {
-    x: 4,
+
+var player = {
+    x: 1,
     y: 1,
     direction: 2 // Down
 }
 
 
-var runBot = false; /* If true, the bot will start making its way out. */
+var notAllowed = [
+    [{x: 0, y: (-1)}, {x: (-1), y: (-1)}, {x: 1, y: (-1)}, {x: (-1), y: (-2)}, {x: 0, y: (-2)}, {x: 1, y: (-2)}],
+    [{x: 1, y: 0}, {x: (1), y: (-1)}, {x: 2, y: (-1)}, {x: 2, y: (0)}, {x: 2, y: 1}, {x: 1, y: 1}],
+    [{x: (-1), y: 1}, {x: 0, y: 1}, {y: 1, x: 1}, {x: (-1), y: 2}, {x: 0, y: 2}, {x: 1, y: 2}],
+    [{x: (-1), y: (-1)}, {x: (-1), y: 0}, {x: (-1), y: 1}, {x: (-2), y: (-1)}, {x: (-2), y: 0}, {x: (-2), y: 1}]
+];
 
-var map = new Array(width*height);
-canvas.width = width*10;
-canvas.height = height*10;
+
+
+var map = new Array(width * height);
+canvas.width = width * blockSize;
+canvas.height = height * blockSize;
+
+
+var pointPos = {
+    x: player.x,
+    y: player.y,
+    direction: 2 // Down 
+}
+
+var choices = [{
+    description: "up",
+    direction: 0,
+    x: 0,
+    y: (-1)
+}, {
+    description: "left",
+    direction: 1,
+    x: 1,
+    y: 0
+}, {
+    description: "down",
+    direction: 2,
+    x: 0,
+    y: 1
+}, {
+    description: "right",
+    direction: 3,
+    x: (-1),
+    y: 0
+}];
+
+var turns = new Array();
 
 render();
 
-/* setInterval(function(){
-    render();
-}, 500); */
 
 
-var drawModeAdd = true;
-
-var mousePos = {
-    x: 0,
-    y: 0
-}
-
-function reset(){
-    runBot = false;
-    bot.x = 4;
-    bot.y = 1;
-    bot.direction = 2;
-
-    for(let i = 0; i < map.length; i++){
-        if(map[i] == 3) map[i] = 0;
+document.addEventListener("keydown", function(e){
+    var codes = [38, 39, 40, 37];
+    var index = codes.indexOf(e.keyCode);
+    console.log(index);
+    if(index != -1){
+        player.x += choices[index].x;
+        player.y += choices[index].y;
+        player.direction = index;
     }
-}
-
-var mouseDown = false;
-
-/* Remove right click feature on canvas */
-canvas.oncontextmenu = function (e) {
-    e.preventDefault();
-};
-
-/* Get mouse position */
-canvas.addEventListener("mousemove", function(evt){
-    var rect = canvas.getBoundingClientRect();
-    mousePos = {
-        x: (evt.clientX - rect.left) / (rect.right - rect.left) * canvas.width,
-        y: (evt.clientY - rect.top) / (rect.bottom - rect.top) * canvas.height
-    };
-
-    if(mouseDown){
-        /* Draw on canvas if mouse is down. */
-        draw();
-    }
-
-});
-
-function draw(){
-    if(drawModeAdd){
-        addBlock(Math.floor(mousePos.x/10), Math.floor(mousePos.y/10));
-    } else {
-        removeBlock(Math.floor(mousePos.x/10), Math.floor(mousePos.y/10));
-    }
-}
-
-canvas.addEventListener("mousedown", function(e){
-    mouseDown = true;
-    console.log(e.button);
-    drawModeAdd = (e.button === 0); /* If left click, remove pixels.  */
+    
 })
 
-canvas.addEventListener("mouseup", function(e){
-    mouseDown = false;
-});
-
-/* Draw on click */
-canvas.addEventListener("click", function(e){ draw(); });
-
-function render(){
+function render() {
     /* Render everything 60 times a second */
-    ctx.fillStyle = "#111";
-    ctx.fillRect(0,0, canvas.width, canvas.height);
-    for(var i = 0; i < map.length; i++){
-        if(map[i] > 0){
-            
-            var color = "#bc4545";
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    /* Draw map */
+    for (var i = 0; i < map.length; i++) {
+        if (map[i] > 0) {
+            var color = "#111";
             /* Set color */
-            if(map[i] == 2) color = "#31ce43";
-            if(map[i] == 3) color = "grey";
+            if (map[i] == 2) color = "#31ce43";
+            if (map[i] == 3) color = "grey";
             ctx.fillStyle = color;
 
             var x = i % width;
             var y = (i - x) / width;
-            ctx.fillRect(x*10, y*10, 10, 10)
-        }
-        
-    }
-
-    if(runBot){
-        botStep();
-    }
-
-
-    /* Render out bot */
-    ctx.fillStyle = "white";
-    ctx.fillRect(bot.x*10, bot.y*10, 10, 10)
-    requestAnimationFrame(render);
-}
-
-function botStep(){
-    /* Check if bot has finished the maze. */
-    if(map[coordinatesToIndex(bot.x,bot.y)] == 2){
-        console.log("Finished!");
-        return;
-    }
-
-    var choices = [{
-        description: "up",
-        direction: 0,
-        x: 0,
-        y: (-1)
-    }, {
-        description: "left",
-        direction: 1,
-        x: 1,
-        y: 0
-    }, {
-        description: "down",
-        direction: 2,
-        x: 0,
-        y: 1
-    }, {
-        description: "right",
-        direction: 3,
-        x: (-1),
-        y: 0
-    }]
-    
-    var choicesPoints = new Array();
-
-    /* Evaluate the conditions of all direciton, and come up with a value for how good of an option each direction is. */
-    for(let i = 0; i < choices.length; i++){
-        var choice = choices.slice()[i];
-        var block = map[coordinatesToIndex(choice.x + bot.x, choice.y + bot.y)];
-        if(block == 0 || block == null){
-            choicesPoints[i] = {index: i, points: 1}; /* Never been here before, should walk there. */
-        } else if(block == 1){
-            choicesPoints[i] = {index: i, points: 10}; /* Not possible, wall in the way. */
-        } else if(block == 3){
-            choicesPoints[i] = {index: i, points: 2}; /* Been here before, but can return. */
-        } else if(block == 2){
-            choicesPoints[i] = {index: i, points: 0}; /* Block is finish, go there! */
-        } else {
-            console.warn("Unexpected block at index:" + coordinatesToIndex(choice.x + bot.x, choice.y + bot.y));
+            ctx.fillRect(x * blockSize, y * blockSize, blockSize, blockSize)
         }
     }
 
-    /* Sort choices */
-    choicesPoints.sort(function(a, b) {
-        return a.points - b.points;
-    });
+    /* Render out player */
+    ctx.fillStyle = "#f44268";
+    ctx.fillRect(player.x * blockSize, player.y * blockSize, blockSize, blockSize)
 
-    var finalChoice = choicesPoints[0];
+    /* Render out map drawer
+    ctx.fillStyle = "5bc8ff";
+    ctx.fillRect(pointPos.x * blockSize, pointPos.y * blockSize, blockSize, blockSize); */
 
-    if(finalChoice > 5){
-        stop();
-        console.error("Stuck! This maze is invalid.");
-    } else if(finalChoice.points > 1){
-        console.log("Want to points: " + choicesPoints[bot.direction].points);
-        for(let i = 0; i < choicesPoints.length; i++){
-            if(choicesPoints[i].index == bot.direction){
-                if(choicesPoints[i].points < 10){
-                    bot.x += choices[bot.direction].x;
-                    bot.y += choices[bot.direction].y;
-                } else {
-                        if(randomBoolean){
-                            bot.direction--;
-                            if(bot.direction < 0){
-                                bot.direction = 3;
-                            }
-                        } else {
-                            bot.direction++;
-                            if(bot.direction > 3){
-                                bot.direction = 0;
-                            }
-                        }                        
-                    }
-                }
+    for(var i = 0; i < turns.length; i++){
+        ctx.fillStyle = "#f45942";
+        ctx.fillRect(turns[i].x * blockSize, turns[i].y * blockSize, blockSize, blockSize)
+    }
+
+    /* Render out face for generator 
+    for(var i = 0; i < notAllowed[pointPos.direction].length; i++){
+        ctx.fillStyle = "#5bc8ff";
+        ctx.fillRect((notAllowed[pointPos.direction][i].x + pointPos.x ) * blockSize, (notAllowed[pointPos.direction][i].y + pointPos.y) * blockSize, blockSize, blockSize)
+    } */
+
+    var ways = openWays(player.x, player.y);
+    if(ways.length < 2){
+        // Auto move
+        for(let i = -1; i < 2; i++){
+            if(map[coordinatesToIndex(player.x + choices[player.direction + i].x, player.y + choices[player.direction + i].y)] == 0){
+                player.x += choices[player.direction + i].x;
+                player.y += choices[player.direction + i].y;
             }
-        } else {
-        bot.direction = finalChoice.index;
-        bot.x += choices[finalChoice.index].x;
-        bot.y += choices[finalChoice.index].y;
+        }
     }
+
+
+    requestAnimationFrame(render);
+
     
-    map[coordinatesToIndex(bot.x, bot.y)] = 3;
-
-    return;
-
 }
 
-function randomBoolean(){
-    if(Math.random() > 0.5){
+function openWays(x, y){
+    var open = new Array();
+    for(let i = 0; i < choices.length; i++){
+        if(i != player.direction && map[coordinatesToIndex(x + choices[i].x, y + choices[i].y)] == 0) open.push({x: x + choices[i].x, y:  y + choices[i].y});
+    }
+    return open;
+}
+
+
+
+function randomBoolean() {
+    if (Math.random() > 0.5) {
         return false;
     } else {
         return true;
     }
 }
 
-function start(){
-    runBot = true;
-    document.getElementById("stopAndRestart").innerHTML = "Stop";
+
+function addBlock(x, y) {
+    map[coordinatesToIndex(x, y)] = 1;
 }
 
-function stop(){
-    if(runBot){
-        runBot = false;
-        document.getElementById("stopAndRestart").innerHTML = "Reset";
-    } else {
-        reset();
-    }
-    
-    
-    
+function addTrailBlock(x, y) {
+    map[coordinatesToIndex(x, y)] = 3;
 }
 
-function addBlock(x, y){
-    map[coordinatesToIndex(x ,y)] = 1;
+function removeBlock(x, y) {
+    map[x + (width * y)] = 0;
 }
 
-function addTrailBlock(x, y){
-    map[coordinatesToIndex(x ,y)] = 3;
+function coordinatesToIndex(x, y) {
+    return x + (width * y);
 }
 
-function removeBlock(x, y){
-    map[x + (width*y)] = 0;
-}
-
-function coordinatesToIndex(x, y){
-    return x + (width*y);
-}
-
-function indexToCoordinates(index){
+function indexToCoordinates(index) {
     var x = index % width;
     var y = (index - x) / width
-    return {x: x, y: y};
+    return {
+        x: x,
+        y: y
+    };
 }
 
 
-spawnBoundingBox();
-function spawnBoundingBox(){
-    /* Draw bounding box. */
-    for(var i = 0; i < width; i++){
-        addBlock(i, 0);
+generateMaze();
+
+var finished = false;
+
+function generateMaze() {
+    for (let i = 0; i < map.length; i++) {
+        map[i] = 1;
     }
-    for(var i = 0; i < width; i++){
-        addBlock(i, height-1);
+    
+    /* window.mapDrawer = setInterval(function () { */
+        while(!finished){
+        var option = Math.floor(Math.random() * 100);
+
+        if (option > 70) {
+            /* Turn */
+            drawTurn();
+        } else {
+            /* Continue forward */
+            drawForward();
+        }
+
+        map[coordinatesToIndex(pointPos.x, pointPos.y)] = 0;
+
+        } /* , 5); */
+}
+
+
+function drawForward() {
+    var x = pointPos.x;
+        y = pointPos.y;
+        index = coordinatesToIndex(pointPos.x, pointPos.y)
+        dir = pointPos.direction;
+
+    /* Check if facing direction is clear */
+    if(checkDirection(x, y, dir)){
+
+        if(legalTurns(pointPos.x, pointPos.y) > 1){
+            turns.push({x: pointPos.x, y: pointPos.y})
+        }
+
+        pointPos.x += choices[pointPos.direction].x;
+        pointPos.y += choices[pointPos.direction].y;
+    } else if(atDeadEnd(x, y)){
+        if(turns.length < 1){
+            //clearInterval(mapDrawer);
+            finished = true;
+            spawnBoundingBox();
+            return;
+        }
+        pointPos.x = turns[turns.length-1].x;
+        pointPos.y = turns[turns.length-1].y;
+        turns.splice(turns.length-1, 1);
+    } else {
+        drawTurn(x, y);
     }
-    for(var i = 0; i < height; i++){
-        addBlock(0, i);
+}
+
+function atDeadEnd(x, y){
+    for(let i = 0; i < 3; i++){
+        if(checkDirection(x, y, i)){
+            return false;
+        }
     }
-    for(var i = 0; i < height; i++){
-        addBlock(width-1, i);
+    return true;
+}
+
+function drawTurn(x, y){
+    /* Turn */
+    if (randomBoolean()) {
+        pointPos.direction--;
+        if (pointPos.direction < 0) {
+            pointPos.direction = 3;
+        }
+    } else {
+        pointPos.direction++;
+        if (pointPos.direction > 3) {
+            pointPos.direction = 0;
+        }
     }
-    /* Add Start and Finish points. */
-    map[coordinatesToIndex(width-4, height-1)] = 2;
+
+    if(legalTurns(x, y) > 1){
+        turns.push({
+            x: x,
+            y: y
+        });
+    }
+}
+
+function legalTurns(x, y){
+    var legal = 0;
+    for(let i = 0; i < 3; i++){
+        if(checkDirection(x, y, i)) legal++;
+    }
+    return legal;
+}
+
+function checkDirection(x, y, dir){
+
+    
+    /* Check */
+    var currentlyNotAllowed = notAllowed[dir];
+    
+    for(let i = 0; i < currentlyNotAllowed.length; i++){
+        if(map[coordinatesToIndex(currentlyNotAllowed[i].x + x, currentlyNotAllowed[i].y + y)] !== 1){
+            return false;
+        }
+        if(currentlyNotAllowed[i].x + x == -1 || currentlyNotAllowed[i].x + x == width){
+            return false;
+        }
+        if(currentlyNotAllowed[i].y + y == -1 || currentlyNotAllowed[i].y + y == height){
+            return false;
+        }
+    }
+
+    return true;
+}
+
+var checking = new Array();
+
+
+
+function getMapSlot(x, y){
+    return map[coordinatesToIndex(x,y)];
+}
+
+function spawnBoundingBox() {
+    /* Finish point. */
+    for(var i = map.length; i > 0; i--){
+        if(map[i] == 0){
+            map[i] = 2;
+            break;
+        }
+    }
 }
