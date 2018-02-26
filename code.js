@@ -5,9 +5,18 @@
 
 /* Height and Width in blocks (not pixels.) blockSize x blockSize */
 
-var width = 30;
+/**
+ * Defaults:
+ * var width = 30;
 var height = 20;
 var blockSize = 30;
+ */
+
+var width = 50;
+var height = 50;
+var blockSize = 18;
+var speed = 1;
+var probability = 90;
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -42,8 +51,8 @@ canvas.height = height * blockSize;
 
 
 var pointPos = {
-    x: player.x,
-    y: player.y,
+    x: 1,
+    y: 1,
     direction: 2 // Down 
 }
 
@@ -106,24 +115,24 @@ function render() {
         }
     }
 
-    /* Render out player */
+    //Render out player 
     ctx.fillStyle = "#f44268";
     ctx.fillRect(player.x * blockSize, player.y * blockSize, blockSize, blockSize)
 
-    /* Render out map drawer
+    /* Render out map drawer */
     ctx.fillStyle = "5bc8ff";
-    ctx.fillRect(pointPos.x * blockSize, pointPos.y * blockSize, blockSize, blockSize); */
+    ctx.fillRect(pointPos.x * blockSize, pointPos.y * blockSize, blockSize, blockSize); 
 
     for(var i = 0; i < turns.length; i++){
         ctx.fillStyle = "#f45942";
         ctx.fillRect(turns[i].x * blockSize, turns[i].y * blockSize, blockSize, blockSize)
     }
 
-    /* Render out face for generator 
+    /* Render out face for generator */
     for(var i = 0; i < notAllowed[pointPos.direction].length; i++){
         ctx.fillStyle = "#5bc8ff";
         ctx.fillRect((notAllowed[pointPos.direction][i].x + pointPos.x ) * blockSize, (notAllowed[pointPos.direction][i].y + pointPos.y) * blockSize, blockSize, blockSize)
-    } */
+    }
 
     var ways = openWays(player.x, player.y);
     if(ways.length < 2){
@@ -196,11 +205,11 @@ function generateMaze() {
         map[i] = 1;
     }
     
-    /* window.mapDrawer = setInterval(function () { */
-        while(!finished){
+    window.mapDrawer = setInterval(function () {
+        //while(!finished){
         var option = Math.floor(Math.random() * 100);
 
-        if (option > 70) {
+        if (option < probability) {
             /* Turn */
             drawTurn();
         } else {
@@ -210,7 +219,7 @@ function generateMaze() {
 
         map[coordinatesToIndex(pointPos.x, pointPos.y)] = 0;
 
-        } /* , 5); */
+        }, speed);
 }
 
 
@@ -231,7 +240,7 @@ function drawForward() {
         pointPos.y += choices[pointPos.direction].y;
     } else if(atDeadEnd(x, y)){
         if(turns.length < 1){
-            //clearInterval(mapDrawer);
+            clearInterval(mapDrawer);
             finished = true;
             spawnBoundingBox();
             return;
@@ -255,15 +264,12 @@ function atDeadEnd(x, y){
 
 function drawTurn(x, y){
     /* Turn */
-    if (randomBoolean()) {
-        pointPos.direction--;
-        if (pointPos.direction < 0) {
-            pointPos.direction = 3;
-        }
-    } else {
-        pointPos.direction++;
-        if (pointPos.direction > 3) {
-            pointPos.direction = 0;
+
+    var check = shuffle([0, 1, 2, 3]);    
+    for(let i = 0; i < check.length; i++){
+        if(checkDirection(pointPos.x, pointPos.y, check[i])){
+            pointPos.direction = check[i];
+            break;
         }
     }
 
@@ -273,6 +279,17 @@ function drawTurn(x, y){
             y: y
         });
     }
+}
+
+function shuffle(a) {
+    var j, x, i;
+    for (i = a.length - 1; i > 0; i--) {
+        j = Math.floor(Math.random() * (i + 1));
+        x = a[i];
+        a[i] = a[j];
+        a[j] = x;
+    }
+    return a;
 }
 
 function legalTurns(x, y){
@@ -285,7 +302,6 @@ function legalTurns(x, y){
 
 function checkDirection(x, y, dir){
 
-    
     /* Check */
     var currentlyNotAllowed = notAllowed[dir];
     
