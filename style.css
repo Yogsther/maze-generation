@@ -2,3 +2,42 @@
     box-shadow: 0px 0px 20px rgba(0,0,0,0.5);
     border-radius: 5px;
 }
+
+#control-panel{
+    width: 200px;
+    position: relative;
+    float: left;
+}
+
+input{
+    height: 30px;
+}
+
+input[type="checkbox"]{
+    transform: scale(2);
+    position: relative;
+    top: 5px;
+    
+}
+
+button{
+    height: 40px;
+    width: 175px;
+    border-radius: 5px;
+    border: none;
+    color: rgb(255, 255, 255);
+    background-color: #111;
+    transition: transform 0.01s;
+    margin-top: 10px;
+
+}
+button:hover{
+    transform: scale(1.05);
+}
+button:active{
+    transform: scale(0.95);
+}
+
+*{
+    font-family: 'Ubuntu', sans-serif;
+}

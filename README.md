@@ -1,8 +1,10 @@
-# Escape the Maze (Game)
+# Maze Generation - Generate a custom maze!
 
-Try it out: https://yogsther.github.io/maze-escape/
+Try it out: https://yogsther.github.io/maze-generation/
 
-Generates a random Maze, your job is to reach the green pixel
-using your arrow keys.
+Generate a custom maze and watch as it generates.
+Unlimited scaling, with only one solution.
 
-Note: It's broken.
+## Todo:
+ [ ] Custom colors.
+ [ ] Fix saw patterns. (I have an idea of how to fix this.)

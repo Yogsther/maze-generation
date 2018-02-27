@@ -5,18 +5,12 @@
 
 /* Height and Width in blocks (not pixels.) blockSize x blockSize */
 
-/**
- * Defaults:
- * var width = 30;
-var height = 20;
-var blockSize = 30;
- */
 
 var width = 50;
 var height = 50;
 var blockSize = 18;
 var speed = 1;
-var probability = 90;
+var probability = 50;
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -29,14 +23,7 @@ const ctx = canvas.getContext("2d");
  * 3 = right
  */
 
-var player = {
-    x: 1,
-    y: 1,
-    direction: 2 // Down
-}
-
-
-var notAllowed = [
+const notAllowed = [
     [{x: 0, y: (-1)}, {x: (-1), y: (-1)}, {x: 1, y: (-1)}, {x: (-1), y: (-2)}, {x: 0, y: (-2)}, {x: 1, y: (-2)}],
     [{x: 1, y: 0}, {x: (1), y: (-1)}, {x: 2, y: (-1)}, {x: 2, y: (0)}, {x: 2, y: 1}, {x: 1, y: 1}],
     [{x: (-1), y: 1}, {x: 0, y: 1}, {y: 1, x: 1}, {x: (-1), y: 2}, {x: 0, y: 2}, {x: 1, y: 2}],
@@ -56,7 +43,7 @@ var pointPos = {
     direction: 2 // Down 
 }
 
-var choices = [{
+const choices = [{
     description: "up",
     direction: 0,
     x: 0,
@@ -79,22 +66,40 @@ var choices = [{
 }];
 
 var turns = new Array();
-
+run();
 render();
 
-
-
-document.addEventListener("keydown", function(e){
-    var codes = [38, 39, 40, 37];
-    var index = codes.indexOf(e.keyCode);
-    console.log(index);
-    if(index != -1){
-        player.x += choices[index].x;
-        player.y += choices[index].y;
-        player.direction = index;
+function run(){
+    width = document.getElementById("width").value;
+    height = document.getElementById("height").value;
+    blockSize = document.getElementById("blockSize").value;
+    speed = document.getElementById("speed").value;
+    probability = document.getElementById("probability").value;
+    if(probability > 99){
+        probability = 99;
+        document.getElementById("probability").value = probability;
     }
+
+    map = new Array(width * height);
+    checking = new Array();
+    turns = new Array();
+    canvas.width = width * blockSize;
+    canvas.height = height * blockSize;
+    pointPos = {
+        x: 1,
+        y: 1,
+        direction: 2 // Down 
+    }
+    if(document.getElementById("clear").checked){
+    try{ clearInterval(mapDrawer); } catch(e){}
+    }
+
+    finished = false;
     
-})
+    
+    generateMaze(document.getElementById("animate").checked);
+}
+
 
 function render() {
     /* Render everything 60 times a second */
@@ -115,9 +120,9 @@ function render() {
         }
     }
 
-    //Render out player 
+
     ctx.fillStyle = "#f44268";
-    ctx.fillRect(player.x * blockSize, player.y * blockSize, blockSize, blockSize)
+    ctx.fillRect(pointPos.x * blockSize, pointPos.y * blockSize, blockSize, blockSize) 
 
     /* Render out map drawer */
     ctx.fillStyle = "5bc8ff";
@@ -129,19 +134,10 @@ function render() {
     }
 
     /* Render out face for generator */
+    if(!finished){
     for(var i = 0; i < notAllowed[pointPos.direction].length; i++){
         ctx.fillStyle = "#5bc8ff";
         ctx.fillRect((notAllowed[pointPos.direction][i].x + pointPos.x ) * blockSize, (notAllowed[pointPos.direction][i].y + pointPos.y) * blockSize, blockSize, blockSize)
-    }
-
-    var ways = openWays(player.x, player.y);
-    if(ways.length < 2){
-        // Auto move
-        for(let i = -1; i < 2; i++){
-            if(map[coordinatesToIndex(player.x + choices[player.direction + i].x, player.y + choices[player.direction + i].y)] == 0){
-                player.x += choices[player.direction + i].x;
-                player.y += choices[player.direction + i].y;
-            }
         }
     }
 
@@ -149,14 +145,6 @@ function render() {
     requestAnimationFrame(render);
 
     
-}
-
-function openWays(x, y){
-    var open = new Array();
-    for(let i = 0; i < choices.length; i++){
-        if(i != player.direction && map[coordinatesToIndex(x + choices[i].x, y + choices[i].y)] == 0) open.push({x: x + choices[i].x, y:  y + choices[i].y});
-    }
-    return open;
 }
 
 
@@ -195,31 +183,43 @@ function indexToCoordinates(index) {
     };
 }
 
-
-generateMaze();
-
 var finished = false;
 
-function generateMaze() {
+function generateMaze(animate) {
     for (let i = 0; i < map.length; i++) {
         map[i] = 1;
     }
+
+    if(animate){
+        window.mapDrawer = setInterval(function () {
+            var option = Math.floor(Math.random() * 100);
+
+            if (option < probability) {
+                /* Turn */
+                drawTurn();
+            } else {
+                /* Continue forward */
+                drawForward();
+            }
     
-    window.mapDrawer = setInterval(function () {
-        //while(!finished){
-        var option = Math.floor(Math.random() * 100);
-
-        if (option < probability) {
-            /* Turn */
-            drawTurn();
-        } else {
-            /* Continue forward */
-            drawForward();
-        }
-
-        map[coordinatesToIndex(pointPos.x, pointPos.y)] = 0;
+            map[coordinatesToIndex(pointPos.x, pointPos.y)] = 0;
 
         }, speed);
+    } else {
+        while(!finished){
+            var option = Math.floor(Math.random() * 100);
+    
+            if (option < probability) {
+                /* Turn */
+                drawTurn();
+            } else {
+                /* Continue forward */
+                drawForward();
+            }
+    
+            map[coordinatesToIndex(pointPos.x, pointPos.y)] = 0;
+        }
+    }        
 }
 
 
@@ -336,4 +336,5 @@ function spawnBoundingBox() {
             break;
         }
     }
+    map[coordinatesToIndex(1, 1)] = 2;
 }
