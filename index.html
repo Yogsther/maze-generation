@@ -24,6 +24,13 @@
         <input type="number" value="1" id="speed">
         Animate: <input type="checkbox" checked id="animate"><br>
         Clear interval <span title="If this unchecked, it wont clear the interval when you render again. This allowes the Generate button to be spammed and make the maze run faster.">(?)</span>: <input type="checkbox" id="clear" checked>
+        <br><br>
+        Background color: <input type="text" id="background" value="#111" class="color" oninput="loadColors()"> <div class="colorBlock" id="background_block"></div>
+        Path color: <input type="text" id="path" value="#fff" class="color" oninput="loadColors()"> <div class="colorBlock" id="path_block"></div>
+        Node color: <input type="text" id="node" value="#ff4f4f" class="color" oninput="loadColors()"> <div class="colorBlock" id="node_block"></div>
+        Search-Head color: <input type="text" id="search" value="#9ed1ff" class="color" oninput="loadColors()"> <div class="colorBlock" id="search_block"></div>
+        Start point color: <input type="text" id="start" value="#6bff5e" class="color" oninput="loadColors()"> <div class="colorBlock" id="start_block"></div>
+        End point color: <input type="text" id="end" value="#ff4281" class="color" oninput="loadColors()"> <div class="colorBlock" id="end_block"></div>
 
         <button id="run" onclick="run()">Generate</button>
 

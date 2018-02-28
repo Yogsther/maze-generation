@@ -69,6 +69,17 @@ var turns = new Array();
 run();
 render();
 
+function loadColors(){
+    try{
+    var colorsArr = ["path", "background", "node", "search", "start", "end"];
+    window.finalColors = new Object();
+    for(let i = 0; i < colorsArr.length; i++){
+        finalColors[colorsArr[i]] = document.getElementById(colorsArr[i]).value;
+        document.getElementById(colorsArr[i] + "_block").style.backgroundColor = finalColors[colorsArr[i]];
+    }
+} catch(e){}
+}
+
 function run(){
     width = document.getElementById("width").value;
     height = document.getElementById("height").value;
@@ -79,6 +90,8 @@ function run(){
         probability = 99;
         document.getElementById("probability").value = probability;
     }
+
+    loadColors();
 
     map = new Array(width * height);
     checking = new Array();
@@ -103,15 +116,15 @@ function run(){
 
 function render() {
     /* Render everything 60 times a second */
-    ctx.fillStyle = "white";
+    ctx.fillStyle = finalColors.path;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     /* Draw map */
     for (var i = 0; i < map.length; i++) {
         if (map[i] > 0) {
-            var color = "#111";
+            var color = finalColors.background;
             /* Set color */
-            if (map[i] == 2) color = "#31ce43";
-            if (map[i] == 3) color = "grey";
+            if (map[i] == 2) color = finalColors.end;
+            if (map[i] == 3) color = "grey"; // I have no clue what the fuck this is.
             ctx.fillStyle = color;
 
             var x = i % width;
@@ -121,22 +134,20 @@ function render() {
     }
 
 
-    ctx.fillStyle = "#f44268";
-    ctx.fillRect(pointPos.x * blockSize, pointPos.y * blockSize, blockSize, blockSize) 
-
     /* Render out map drawer */
-    ctx.fillStyle = "5bc8ff";
+    ctx.fillStyle = "#5bc8ff";
     ctx.fillRect(pointPos.x * blockSize, pointPos.y * blockSize, blockSize, blockSize); 
 
+    /* Render out nodes */
     for(var i = 0; i < turns.length; i++){
-        ctx.fillStyle = "#f45942";
+        ctx.fillStyle = finalColors.node;
         ctx.fillRect(turns[i].x * blockSize, turns[i].y * blockSize, blockSize, blockSize)
     }
 
     /* Render out face for generator */
     if(!finished){
     for(var i = 0; i < notAllowed[pointPos.direction].length; i++){
-        ctx.fillStyle = "#5bc8ff";
+        ctx.fillStyle = finalColors.search;
         ctx.fillRect((notAllowed[pointPos.direction][i].x + pointPos.x ) * blockSize, (notAllowed[pointPos.direction][i].y + pointPos.y) * blockSize, blockSize, blockSize)
         }
     }
